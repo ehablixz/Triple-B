@@ -1,19 +1,36 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
 - main
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: 'windows-latest'  # Für .NET-Framework/.NET Core auf Windows
+
+variables:
+  buildConfiguration: 'Release'
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+# 1. Code aus dem Repository holen
+- task: Checkout@1
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+# 2. .NET-Projekt wiederherstellen
+- task: UseDotNet@2
+  inputs:
+    packageType: 'sdk'
+    version: '7.0.x'   # Passe die .NET-Version an dein Projekt an
+
+- script: dotnet restore
+  displayName: 'Restore NuGet Packages'
+
+# 3. Projekt bauen
+- script: dotnet build --configuration $(buildConfiguration)
+  displayName: 'Build Project'
+
+# 4. Tests ausführen
+- script: dotnet test --configuration $(buildConfiguration) --no-build --verbosity normal
+  displayName: 'Run Unit Tests'
+
+# 5. Optional: Artefakte erstellen (z. B. für Deployment)
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
